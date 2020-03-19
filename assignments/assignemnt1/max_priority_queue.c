@@ -3,7 +3,7 @@
 
 typedef struct heap
 {
-    char name[20];
+    char name[21];
     int key;
 } HEAP;
 
@@ -69,7 +69,7 @@ void print_heap(HEAP heap[])
 
 void insert(HEAP heap[])
 {
-    char name[20];
+    char name[21];
     int key;
 
     printf("Enter name of element: ");
