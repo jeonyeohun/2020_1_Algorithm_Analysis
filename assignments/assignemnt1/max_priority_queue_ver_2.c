@@ -84,16 +84,17 @@ HEAP heap_extract_max(HEAP A[])
 // increase key of given //
 void heap_increase_key(HEAP A[], int i, int key)
 {
+    // exception handler. The given node should be valid node.
+    if (i > heap_size || i < 1 || i > 10)
+    {
+        printf("given index is empty!\n");
+        return;
+    }
+
     // exception handler. the new key should be bigger than the current key.
     if (key < A[i].key)
     {
         printf("new key is smaller than current key.\n");
-        return;
-    }
-    // exception handler. The given node should be valid node.
-    if (i > heap_size)
-    {
-        printf("given index is empty!\n");
         return;
     }
 
@@ -167,9 +168,9 @@ int main()
         case 'I':
             printf("Enter name of element: ");
             scanf("%s", name);
-            getchar();
             key = get_valid_key();
             max_heap_insert(heap, name, key);
+            getchar();
             break;
         // delete
         case 'D':
@@ -191,7 +192,7 @@ int main()
                 break;
             }
             HEAP max = heap_maximum(heap);
-            printf("[%s, %d]", max.name, max.key);
+            printf("[%s, %d]\n", max.name, max.key);
             break;
         // increase
         case 'K':
