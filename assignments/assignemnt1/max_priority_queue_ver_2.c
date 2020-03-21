@@ -1,5 +1,9 @@
+/* This assignment was conducted on repl.it */
+
 #include <stdio.h>
 #include <string.h>
+
+#define MAX_HEAP_SIZE 30
 
 typedef struct heap
 {
@@ -85,7 +89,7 @@ HEAP heap_extract_max(HEAP A[])
 void heap_increase_key(HEAP A[], int i, int key)
 {
     // exception handler. The given node should be valid node.
-    if (i > heap_size || i < 1 || i > 10)
+    if (i > heap_size || i < 1)
     {
         printf("given index is empty!\n");
         return;
@@ -138,6 +142,7 @@ int get_valid_key()
     {
         printf("Enter key value of element: ");
         scanf("%d", &key);
+        getchar();
         if (key < 1 || key > 10)
         {
             printf("invalid key. Put a number between 1 and 10.\n");
@@ -166,11 +171,16 @@ int main()
         {
         // insert
         case 'I':
+            if (heap_size >= MAX_HEAP_SIZE)
+            {
+                printf("The queue is full! Delete first.\n");
+                break;
+            }
             printf("Enter name of element: ");
             scanf("%s", name);
             key = get_valid_key();
             max_heap_insert(heap, name, key);
-            getchar();
+
             break;
         // delete
         case 'D':
@@ -200,7 +210,6 @@ int main()
             scanf("%d", &i);
             key = get_valid_key();
             heap_increase_key(heap, i, key);
-            getchar();
             break;
         // print
         case 'P':
