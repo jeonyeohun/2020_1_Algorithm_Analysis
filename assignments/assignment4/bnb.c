@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define MAX_SIZE 100000
+#define MAX_SIZE 200000
 
 typedef struct item {
     int benefit;
@@ -91,10 +91,9 @@ void greedy(ITEM * itemList, int N , int maxW){
 
 /* Using Dynamic Programming Approach */
 void dp(ITEM * itemList, int N, int W){
-    int ** dpMemo = 0x0;
-    dpMemo = (int **) malloc (sizeof(int*) * N+1);
-    for (int i = 0 ; i <= W ; i++){
-        dpMemo[i] = (int*) malloc (sizeof(int) * W);
+    int ** dpMemo = (int **) malloc (sizeof(int*) * (N+1));
+    for (int i = 0 ; i <= N ; i++){
+        dpMemo[i] = (int*) malloc (sizeof(int) * (W+1));
     }
     for (int i = 0 ; i <=N ; i++){
         for(int w = 0 ; w <= W ; w++){
@@ -110,7 +109,9 @@ void dp(ITEM * itemList, int N, int W){
         }
     }
     printf("Max Benefit from DP with %d items: %d\n", N, dpMemo[N][W]);
-    free(dpMemo[0]);
+    for (int i = 0 ; i <= N ; i++){
+        free(dpMemo[i]);
+    }
     free(dpMemo);
 }
 
@@ -141,6 +142,7 @@ void bandb(ITEM * itemList, int N, int W){
     root.benefit = 0;
     root.level = 0;
     root.bound = calcBound(itemList,root, N, W);
+    heap_size = 0;
     
     int maxBenefit = 0;
     push(pq, root);
