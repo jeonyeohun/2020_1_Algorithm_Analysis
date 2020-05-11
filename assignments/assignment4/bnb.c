@@ -11,12 +11,12 @@
 
 int dp [2][400000];
 int heap_size=0;
-struct timeval tv1,tv2;
+clock_t start, end;
 
 double getExecuteTime(){
-  gettimeofday(&tv2, NULL);
-  double dElapse = (tv2.tv_sec - tv1.tv_sec) * 1000 + (tv2.tv_usec - tv1.tv_usec) / 1000;
-  return dElapse;
+  end = clock();
+  double diff = end - start;
+  return diff/CLOCKS_PER_SEC*1000;
 }
 
 int isTimeOver(){
@@ -213,7 +213,7 @@ int main (){
     srand((unsigned int)time(NULL));
     double time;
     FILE *fp = fopen("output.txt", "w");
-    fputs("# items\t | \t\t\t\tgreedy | \t\t\t\t\t\t\t\t\t\tDP\t\t\t\t\t\t\t\t\t\t\t\tB&B", fp);
+    fputs("# items\t | \t\t\t\t\tgreedy\t\t\t\t | \t\t\t\t\tDP\t\t\t\t\t | \t\t\t\t\tB&B\t\t\t\t\t |", fp);
     fputs("\n=================================================================================\n", fp);
     fclose(fp);
     int teseCases [] = {10, 100, 500, 1000, 3000,5000, 7000, 9000, 10000};
@@ -230,32 +230,32 @@ int main (){
         }
 
         /* begin Greedy approach */
-        gettimeofday(&tv1, NULL);        
+        start = clock();    
         double result = greedy(itemList, N, W);        
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "%5d\t\t time over", N);
-        else fprintf(fp, "%5d\t\t |\t %-6.3f ms / %-10.3f", N, time, result);
+        else fprintf(fp, "%5d\t\t |\t %6.3f ms / %.3f", N, time, result);
 
         /* begin DP approach */
-        gettimeofday(&tv1, NULL);
+        start = clock();
         result = dpK(itemList, N, W);
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "\ttime over");
-        else fprintf(fp, "\t\t%-6.3f ms / %-7d  ", time, (int)result);
+        else fprintf(fp, "\t\t%6.3f ms / %d  ", time, (int)result);
 
         /* begin Branch and Bound approach */
-        gettimeofday(&tv1, NULL);
+        start = clock();
         result = bandb(itemList, N, W);
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "\ttime over\n");
-        else fprintf(fp, "\t\t%-6.3f ms / %-7d\n", time, (int)result);
+        else fprintf(fp, "\t\t%6.3f ms / %d\n", time, (int)result);
         
         
         printf("case %d done\n", N);
         fclose(fp);
     }
-    
+    return 0;
 }
