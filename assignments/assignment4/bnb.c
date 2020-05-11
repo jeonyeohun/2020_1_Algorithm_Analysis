@@ -6,10 +6,10 @@
 #include <math.h> 
 #include <sys/time.h>
 
-#define MAX_SIZE 200000
+#define MAX_SIZE 50000
 #define TIME_LIMIT_MS 900000
 
-int dp [2][400000];
+int dp [2][400001];
 int heap_size=0;
 clock_t start, end;
 
@@ -31,6 +31,7 @@ typedef struct item {
     double bpw;
     int bound;
 }ITEM;
+ITEM itemLists [10001];
 
 /*-------- priority queue related functions --------- */
 void exchange (ITEM heap [], int a, int b){
@@ -159,12 +160,13 @@ int bandb(ITEM * itemList, int N, int W){
     root.level = 0;
     root.bound = calcBound(itemList,root, N, W);
     heap_size = 0;
-    
+int maxheap = 0;    
     int maxBenefit = 0;
     push(pq, root);
 
     while (heap_size != 0){
-        if (isTimeOver()) return -1;
+if(maxheap < heap_size)maxheap = heap_size;
+if (isTimeOver()) return -1;
         ITEM node = pop(pq);
         ITEM left, right = node;
         left.level = node.level+1;
@@ -193,7 +195,7 @@ int bandb(ITEM * itemList, int N, int W){
         }
         
     }
-
+printf("%d\n", maxheap);
     return maxBenefit;
 }
 
@@ -217,37 +219,39 @@ int main (){
     fputs("\n=================================================================================\n", fp);
     fclose(fp);
     int teseCases [] = {10, 100, 500, 1000, 3000,5000, 7000, 9000, 10000};
-    int N, W=100;
-    
+    int N, W;
+         
     for (int i = 0 ; i < sizeof(teseCases)/sizeof(teseCases[0]) ; i++){
       FILE *fp = fopen("output.txt", "a");
+	printf("%d\n", N);
         N = teseCases[i];
         W =  N * 40;
         /* generate random N items */
-        ITEM itemList [N+1];
-        for (int i = 1 ; i <= N ; i++){
-            itemList[i] = randGeneration();
+   printf("allocate %d\n", N); 
+       for (int i = 1 ; i <= N ; i++){
+            itemLists[i] = randGeneration();
         }
-
         /* begin Greedy approach */
-        start = clock();    
-        double result = greedy(itemList, N, W);        
+        start = clock();
+	printf("a");    
+        double result = greedy(itemLists, N, W);        
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "%5d\t\t time over", N);
         else fprintf(fp, "%5d\t\t |\t %6.3f ms / %.3f", N, time, result);
 
+printf("b");
         /* begin DP approach */
         start = clock();
-        result = dpK(itemList, N, W);
+        result = dpK(itemLists, N, W);
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "\ttime over");
         else fprintf(fp, "\t\t%6.3f ms / %d  ", time, (int)result);
-
+printf("c");
         /* begin Branch and Bound approach */
         start = clock();
-        result = bandb(itemList, N, W);
+        result = bandb(itemLists, N, W);
         time = getExecuteTime();
 
         if (result == -1) fprintf(fp, "\ttime over\n");
