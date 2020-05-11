@@ -1,8 +1,28 @@
+// This program works with Greedy, DP, and Branch and Bound approaches
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <math.h> 
+#include <sys/time.h>
 
 #define MAX_SIZE 200000
+#define TIME_LIMIT_MS 900000
+
+int dp [2][400000];
+int heap_size=0;
+struct timeval tv1,tv2;
+
+double getExecuteTime(){
+  gettimeofday(&tv2, NULL);
+  double dElapse = (tv2.tv_sec - tv1.tv_sec) * 1000 + (tv2.tv_usec - tv1.tv_usec) / 1000;
+  return dElapse;
+}
+
+int isTimeOver(){
+  double time = getExecuteTime();
+  return time > TIME_LIMIT_MS;
+}
 
 typedef struct item {
     int benefit;
@@ -12,12 +32,11 @@ typedef struct item {
     int bound;
 }ITEM;
 
-int heap_size=0;
-
+/*-------- priority queue related functions --------- */
 void exchange (ITEM heap [], int a, int b){
-    ITEM temp = heap[a];
+    ITEM right = heap[a];
     heap[a] = heap[b];
-    heap[b] = temp;
+    heap[b] = right;
 }
 
 void max_heapify (ITEM heap [], int n){
@@ -57,9 +76,9 @@ ITEM pop(ITEM heap[]){
     max_heapify(heap, 1);
     return r;
 }
-/* <-------- queue related functions ---------> */
+/* ---------------- until here --------------------- */
 
-
+/* sorting condition for quick sort */
 int static compare (const void * first, const void *second){
     ITEM firstB = *(ITEM *)first;
     ITEM secondB = *(ITEM *)second;
@@ -73,11 +92,12 @@ int static compare (const void * first, const void *second){
 }
 
 /* Using Greeady Algorithm Approach */
-void greedy(ITEM * itemList, int N , int maxW){
+double greedy(ITEM * itemList, int N , int maxW){
     qsort(itemList+1, N+1, sizeof(ITEM), compare);
     int curW = 0;
     double maxBenefit = 0;
     for (int i = 1 ; i <=N ; i++){
+        if (isTimeOver()) return -1;
         if (curW + itemList[i].weight > maxW){
             maxBenefit += (double)(itemList[i].bpw) * (maxW-curW);
             break;
@@ -86,35 +106,31 @@ void greedy(ITEM * itemList, int N , int maxW){
         maxBenefit = maxBenefit + itemList[i].benefit;
         if (curW >= maxW) break;
     }
-    printf("Max Benefit from Greedy with %d items: %f\n", N, maxBenefit);
+    return maxBenefit;
 }
 
 /* Using Dynamic Programming Approach */
-void dp(ITEM * itemList, int N, int W){
-    int ** dpMemo = (int **) malloc (sizeof(int*) * (N+1));
-    for (int i = 0 ; i <= N ; i++){
-        dpMemo[i] = (int*) malloc (sizeof(int) * (W+1));
-    }
-    for (int i = 0 ; i <=N ; i++){
+int dpK(ITEM * itemList, int N, int W){
+  int maxbenefit = 0;
+  for (int i = 1 ; i <= W ; i++) dp[0][i] = 0;
+    for (int i = 1 ; i <= N ; i++){
+      if (isTimeOver()) return -1;
         for(int w = 0 ; w <= W ; w++){
-            if (i== 0 || w==0) {dpMemo[i][w] = 0;
-                continue;}
-            if (itemList[i].weight <= w){
-                if(itemList[i].benefit + dpMemo[i-1][w-itemList[i].weight] > dpMemo[i-1][w]){ // 현재 물건만큼 가방을 비우고 현재 물건을 넣는게 이득인지 확인
-                    dpMemo[i][w] = itemList[i].benefit + dpMemo[i-1][w-itemList[i].weight];
-                    continue;
-                }
+          int wi = itemList[i].weight;
+          int bi = itemList[i].benefit;
+            if(w < wi) dp[i%2][w] = dp[1-i%2][w];
+            else{
+              if (dp[1-i%2][w] > dp[1-i%2][w-wi]+bi) dp[i%2][w] = dp[1-i%2][w];
+              else dp[i%2][w] = dp[1-i%2][w-wi]+bi;
             }
-            dpMemo[i][w] = dpMemo[i-1][w]; // 이득이 아니라면 그냥 넣지말자
+            if (maxbenefit < dp[i%2][w])maxbenefit = dp[i%2][w];
         }
     }
-    printf("Max Benefit from DP with %d items: %d\n", N, dpMemo[N][W]);
-    for (int i = 0 ; i <= N ; i++){
-        free(dpMemo[i]);
-    }
-    free(dpMemo);
+    return maxbenefit;
+    
 }
 
+/* calculate bound of each node  */
 int calcBound (ITEM * itemList, ITEM node, int N, int W){
     int totWeight = node.weight;
     int bound;
@@ -135,7 +151,7 @@ int calcBound (ITEM * itemList, ITEM node, int N, int W){
 }
 
 /* Using Branch and Bound Approach */
-void bandb(ITEM * itemList, int N, int W){
+int bandb(ITEM * itemList, int N, int W){
     ITEM root;
     ITEM pq [MAX_SIZE];
     root.weight = 0;
@@ -148,37 +164,37 @@ void bandb(ITEM * itemList, int N, int W){
     push(pq, root);
 
     while (heap_size != 0){
+        if (isTimeOver()) return -1;
         ITEM node = pop(pq);
-        ITEM temp;
-        temp.level = node.level+1;
-        if (temp.level > N) {
-          temp.benefit = node.benefit;
-          temp.weight = node.weight;
+        ITEM left, right = node;
+        left.level = node.level+1;
+        if (left.level > N) {
+          left.benefit = node.benefit;
+          left.weight = node.weight;
         }
         else {
-          temp.benefit = node.benefit + itemList[temp.level].benefit;
-          temp.weight = node.weight + itemList[temp.level].weight;
+          left.benefit = node.benefit + itemList[left.level].benefit;
+          left.weight = node.weight + itemList[left.level].weight;
         }
         
-        if (temp.weight <= W && temp.benefit > maxBenefit){
-            maxBenefit = temp.benefit;
+        if (left.weight <= W && left.benefit > maxBenefit){
+            maxBenefit = left.benefit;
         }
         
-        temp.bound =calcBound(itemList, temp, N, W);
-        if (temp.bound > maxBenefit){
-            push(pq, temp);
+        left.bound =calcBound(itemList, left, N, W);
+        if (left.bound > maxBenefit){
+            push(pq, left);
         }
-        
-        node.bound =calcBound(itemList, node, N, W);
-        if (node.bound >maxBenefit){
-            node.level += 1;
-            push(pq, node);
+      
+        right.bound = calcBound(itemList, node, N, W);
+        if (right.bound >maxBenefit){
+            right.level = node.level + 1;
+            push(pq, right);
         }
         
     }
 
-    printf("Max Benefit from Branch & Bound with %d items: %d\n", N, maxBenefit);
-    return;
+    return maxBenefit;
 }
 
 
@@ -194,19 +210,52 @@ ITEM randGeneration(){
 }
 
 int main (){
-      srand((unsigned int)time(NULL));
-        int teseCases [9] = {10, 100, 500, 1000, 3000, 5000, 7000, 9000, 10000};
-        int N, W;
-        
-        for (int i = 0 ; i < 9 ; i++){
-            N = teseCases[i];
-            W =  N * 40;
-            ITEM itemList [N+1];
-            for (int i = 1 ; i <= N ; i++){
-                itemList[i] = randGeneration();
-            }
-            greedy(itemList, N, W);
-            dp(itemList, N, W);
-            bandb(itemList, N, W);
+    srand((unsigned int)time(NULL));
+    double time;
+    FILE *fp = fopen("output.txt", "w");
+    fputs("# items\t | \t\t\t\tgreedy | \t\t\t\t\t\t\t\t\t\tDP\t\t\t\t\t\t\t\t\t\t\t\tB&B", fp);
+    fputs("\n=================================================================================\n", fp);
+    fclose(fp);
+    int teseCases [] = {10, 100, 500, 1000, 3000,5000, 7000, 9000, 10000};
+    int N, W=100;
+    
+    for (int i = 0 ; i < sizeof(teseCases)/sizeof(teseCases[0]) ; i++){
+      FILE *fp = fopen("output.txt", "a");
+        N = teseCases[i];
+        W =  N * 40;
+        /* generate random N items */
+        ITEM itemList [N+1];
+        for (int i = 1 ; i <= N ; i++){
+            itemList[i] = randGeneration();
         }
+
+        /* begin Greedy approach */
+        gettimeofday(&tv1, NULL);        
+        double result = greedy(itemList, N, W);        
+        time = getExecuteTime();
+
+        if (result == -1) fprintf(fp, "%5d\t\t time over", N);
+        else fprintf(fp, "%5d\t\t |\t %-6.3f ms / %-10.3f", N, time, result);
+
+        /* begin DP approach */
+        gettimeofday(&tv1, NULL);
+        result = dpK(itemList, N, W);
+        time = getExecuteTime();
+
+        if (result == -1) fprintf(fp, "\ttime over");
+        else fprintf(fp, "\t\t%-6.3f ms / %-7d  ", time, (int)result);
+
+        /* begin Branch and Bound approach */
+        gettimeofday(&tv1, NULL);
+        result = bandb(itemList, N, W);
+        time = getExecuteTime();
+
+        if (result == -1) fprintf(fp, "\ttime over\n");
+        else fprintf(fp, "\t\t%-6.3f ms / %-7d\n", time, (int)result);
+        
+        
+        printf("case %d done\n", N);
+        fclose(fp);
+    }
+    
 }
