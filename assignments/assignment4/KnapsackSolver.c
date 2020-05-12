@@ -138,17 +138,14 @@ int slidingDP(ITEM * itemList, int N, int W){
 /* calculate bound of each node  */
 int calcBound (ITEM * itemList, ITEM node, int N, int W){
     int totWeight = node.weight;
-    int bound;
+    int bound = node.benefit;
     int level = node.level+1;
     if (node.weight >= W || node.level > N) return 0;
 
-    else{
-        bound = node.benefit;
-        while(level <= N && totWeight + itemList[level].weight <= W){
-            totWeight += itemList[level].weight;
-            bound += itemList[level].benefit;
-            level++;
-        }
+    while(level <= N && totWeight + itemList[level].weight <= W){
+        totWeight += itemList[level].weight;
+        bound += itemList[level].benefit;
+        level++;
     }
 
     if (level > N) return bound;
@@ -171,7 +168,8 @@ int bandb(ITEM * itemList, int N, int W){
         if (isTimeOver()) return -1;
         ITEM node = pop(pq);
         ITEM left, right = node;
-        left.level = node.level+1;
+        left.level = node.level + 1;
+        
         if (left.level > N) {
           left.benefit = node.benefit;
           left.weight = node.weight;
