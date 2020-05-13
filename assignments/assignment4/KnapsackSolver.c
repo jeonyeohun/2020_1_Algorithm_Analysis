@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <math.h> 
-#include <sys/time.h>
 
 #define MAX_SIZE 50000
 #define TIME_LIMIT_MS 900000
@@ -110,7 +108,7 @@ double greedy(ITEM * itemList, int N , int maxW){
     return maxBenefit;
 }
 
-/* Using Dynamic Programming Approach */
+/* Using Dynamic Programming Approach with Sliding Window Strategy*/
 int slidingDP(ITEM * itemList, int N, int W){
   int maxBenefit = 0;
   for (int i = 1 ; i <= W ; i++) {
